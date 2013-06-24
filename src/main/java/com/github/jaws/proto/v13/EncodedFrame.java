@@ -6,9 +6,12 @@ public class EncodedFrame {
 	public boolean valid = false;
 	public byte[] raw = new byte[126];
 	public int payloadLength = 0;
+	public int payloadStart = 0;
+	public int totalLength = 0;
 	
-	public static EncodedFrame encode(int opcode, boolean fin, boolean masked,
-			byte[] data, int offset, int length, EncodedFrame reuse) throws EncodeException {
+	public static EncodedFrame encode(final int opcode, final boolean fin,
+			final boolean masked, final byte[] data, final int offset,
+			final int length, EncodedFrame reuse) throws EncodeException {
 		// Create a new frame if the user passes us null
 		if(reuse == null) reuse = new EncodedFrame();
 		reuse.valid = false;
@@ -25,22 +28,21 @@ public class EncodedFrame {
 		if(masked) header |= MASK_BIT;
 		else header &= ~MASK_BIT;
 		
-		int payloadSize = length;
 		int extraBytes = 0;
 		byte[] payloadExtra = { 0, 0, 0, 0, 0, 0, 0, 0 };
-		if(payloadSize < 126) {
-			header |= payloadSize & PAYLOAD_MASK;
-		} else if(payloadSize < Short.MAX_VALUE) {
+		if(length < 126) {
+			header |= length & PAYLOAD_MASK;
+		} else if(length < Short.MAX_VALUE) {
 			header |= 126 & PAYLOAD_MASK;
-			payloadExtra[0] = (byte)((payloadSize & 0xFF00) >>> 8);
-			payloadExtra[1] = (byte)((payloadSize & 0x00FF) >>> 0);
+			payloadExtra[0] = (byte)((length & 0xFF00) >>> 8);
+			payloadExtra[1] = (byte)((length & 0x00FF) >>> 0);
 			extraBytes += 2;
 		} else {
 			header |= 127 & PAYLOAD_MASK;
-			payloadExtra[4] = (byte)((payloadSize & 0xFF000000) >>> 24);
-			payloadExtra[5] = (byte)((payloadSize & 0x00FF0000) >>> 16);
-			payloadExtra[6] = (byte)((payloadSize & 0x0000FF00) >>> 8);
-			payloadExtra[7] = (byte)((payloadSize & 0x000000FF) >>> 0);
+			payloadExtra[4] = (byte)((length & 0xFF000000) >>> 24);
+			payloadExtra[5] = (byte)((length & 0x00FF0000) >>> 16);
+			payloadExtra[6] = (byte)((length & 0x0000FF00) >>> 8);
+			payloadExtra[7] = (byte)((length & 0x000000FF) >>> 0);
 			extraBytes += 8;
 		}
 		
@@ -75,7 +77,9 @@ public class EncodedFrame {
 			raw[i] = (byte)(data[j] ^ mask[j % 4]);
 		}
 		
-		reuse.payloadLength = payloadSize;
+		reuse.payloadLength = length;
+		reuse.payloadStart = payloadStart;
+		reuse.totalLength = payloadStart + length;
 		reuse.valid = true;
 		
 		return reuse;
