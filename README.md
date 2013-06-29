@@ -1,6 +1,4 @@
-![build status](https://travis-ci.org/bmcdorman/jaws.png)
-
-jaws
+jaws ![build status](https://travis-ci.org/bmcdorman/jaws.png)
 ====
 
 Lightweight and transparent JAva WebSockets.
