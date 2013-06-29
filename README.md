@@ -1,3 +1,5 @@
+![build status](https://travis-ci.org/bmcdorman/jaws.png)
+
 jaws
 ====
 
