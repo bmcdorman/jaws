@@ -14,7 +14,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- *
+ * HttpHeader encapsulates commonalities between the two types of headers we're
+ * concerned about: Requests and responses.
+ * 
  * @author Braden McDorman
  */
 public abstract class HttpHeader {
@@ -43,25 +45,59 @@ public abstract class HttpHeader {
 		fields.put(key, new ArrayList<String>());
 	}
 	
+	private void validateKey(final String key) {
+		if(key == null) throw new NullPointerException("Key can't be null");
+		if(key.isEmpty()) throw new IllegalArgumentException("Key can't be empty");
+	}
+	
+	private void validateValue(final String value) {
+		if(value == null) throw new NullPointerException("Value can't be null");
+		if(value.isEmpty()) throw new IllegalArgumentException("Value can't be empty");
+	}
+	
+	/**
+	 * 
+	 * @param key The field key to add a value to
+	 * @param value The value to add to the field
+	 */
 	public void addField(final String key, final String value) {
-		if(key == null || value == null) throw new NullPointerException();
+		validateKey(key);
+		validateValue(value);
+		if(value == null) throw new NullPointerException("Value can't be null");
 		initalizeField(key);
 		fields.get(key).add(value);
 	}
 	
+	/**
+	 * Sets a field to several given values, in the order specified.
+	 * 
+	 * @param key The field key to set
+	 * @param values the values to set the key to
+	 */
 	public void setField(final String key, final List<String> values) {
+		validateKey(key);
+		for(final String value : values) validateValue(value);
+		
 		initalizeField(key);
 		final List<String> v = fields.get(key);
 		v.clear();
 		v.addAll(values);
 	}
 	
+	/**
+	 * Remove the field 
+	 * 
+	 * @param key
+	 * @return 
+	 */
 	public boolean removeField(final String key) {
+		validateKey(key);
 		if(!fields.containsKey(key)) return false;
 		return fields.remove(key) != null;
 	}
 	
 	public List<String> getField(final String key) {
+		validateKey(key);
 		return fields.get(key);
 	}
 	
@@ -69,21 +105,32 @@ public abstract class HttpHeader {
 		return fields.keySet();
 	}
 	
+	/**
+	 * 
+	 * @param version The HTTP version string that this header uses
+	 */
 	public void setVersion(final String version) {
-		if(version == null) throw new NullPointerException();
+		if(version == null) throw new NullPointerException("Version null");
 		this.version = version;
 	}
 	
+	/**
+	 * @return The previously set HTTP version string
+	 */
 	public String getVersion() {
 		return version;
 	}
 	
 	protected abstract String getFirstLine();
 	
+	/**
+	 * Serialize this HTTP header into a valid HTTP header string.
+	 * @return A valid HTTP header string that represents this object
+	 */
 	public String generateString() {
 		if(version == null) {
 			throw new NullPointerException("Version must be"
-				+ "set before constructing a header.");
+				+ " set before constructing a header.");
 		}
 		String ret = getFirstLine() + LINE_BREAK;
 		for(String key : fields.keySet()) {

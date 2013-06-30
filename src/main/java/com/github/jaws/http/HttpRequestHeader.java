@@ -61,6 +61,10 @@ public class HttpRequestHeader extends HttpHeader {
 	private String method;
 	private String requestUri;
 	
+	/**
+	 * 
+	 * @param method 
+	 */
 	public void setMethod(final String method) {
 		if(method == null) throw new NullPointerException();
 		this.method = method;
@@ -70,11 +74,19 @@ public class HttpRequestHeader extends HttpHeader {
 		return method;
 	}
 	
+	/**
+	 * The entire request URI 
+	 * 
+	 * @param requestUri 
+	 */
 	public void setRequestUri(final String requestUri) {
 		if(requestUri == null) throw new NullPointerException();
 		this.requestUri = requestUri;
 	}
 	
+	/**
+	 * @return The previously set request uri for this request header
+	 */
 	public String getRequestUri() {
 		return requestUri;
 	}

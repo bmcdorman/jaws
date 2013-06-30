@@ -22,8 +22,9 @@ public class ServerHandshakeTest  {
 		final byte[] key = Base64.decodeBase64(clientKey);
 		ServerHandshake hand = new ServerHandshake();
 		hand.setKey(key);
-		final List<String> aKeys = hand.getHeader().getField(Handshake.SEC_WEBSOCKET_ACCEPT_KEY);
-		assertEquals("One and only one accept key allowed", aKeys.size(), 1);
+		final List<String> aKeys = hand.getHeader()
+			.getField(Handshake.SEC_WEBSOCKET_ACCEPT_KEY);
+		assertEquals("One and only one accept key allowed", 1, aKeys.size());
 		final String aKey = aKeys.get(0);
 		assertEquals("Accept key mismatch", "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=", aKey);
 	}

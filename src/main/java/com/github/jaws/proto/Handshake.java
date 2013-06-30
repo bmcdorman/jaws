@@ -24,12 +24,18 @@ public class Handshake {
 	private final List<String> extensions = new ArrayList<String>();
 	private byte[] key;
 	
-	public void setExtensions(final List<String> protocols) {
-		if(protocols == null) throw new NullPointerException("Extensions must be a non-null"
-			+ " list");
+	public void setExtensions(final List<String> extensions) {
+		if(extensions == null) throw new NullPointerException("Extensions must be a"
+			+ " non-null list");
+		
+		for(final String extension : extensions) {
+			if(extension == null) {
+				throw new NullPointerException("Extension can not be null");
+			}
+		}
 		
 		this.extensions.clear();
-		this.extensions.addAll(protocols);
+		this.extensions.addAll(extensions);
 	}
 	
 	public boolean addExtension(final String extension) {

@@ -37,6 +37,7 @@ public class DecodedFrame {
 	 */
 	public static DecodedFrame decode(final InputStream in, DecodedFrame reuse)
 			throws DecodeException, IOException {
+		if(in == null) throw new NullPointerException("Input stream can't be null");
 		// Create a new frame if the user passes us null
 		if(reuse == null) reuse = new DecodedFrame();
 		

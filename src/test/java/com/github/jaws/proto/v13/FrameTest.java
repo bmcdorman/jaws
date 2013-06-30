@@ -10,13 +10,14 @@ import org.junit.runners.JUnit4;
 import static com.github.jaws.proto.v13.HeaderConstants.*;
 import com.github.jaws.util.RandomData;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 
 @RunWith(JUnit4.class)
 public class FrameTest {
 	
 	
 	@Test
-	public void inverseProperty() throws DecodeException, EncodeException, java.io.IOException {
+	public void inverseProperty() throws DecodeException, EncodeException, IOException {
 		final byte[] data = RandomData.getByteArray(128);
 		final boolean masked = true;
 		EncodedFrame encodedFrame = null;

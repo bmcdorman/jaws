@@ -112,7 +112,8 @@ public class HttpResponseHeader extends HttpHeader {
 			+ SEPARATOR + reasonPhrase;
 	}
 	
-	public static HttpResponseHeader parseResponseHeader(final InputStream in) throws IOException {
+	public static HttpResponseHeader parseResponseHeader(final InputStream in)
+			throws IOException {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 		final String firstLine = reader.readLine();
 		if(firstLine.isEmpty()) return null;
