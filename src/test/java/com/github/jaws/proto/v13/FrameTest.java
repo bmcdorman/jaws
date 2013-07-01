@@ -9,6 +9,7 @@ import org.junit.runners.JUnit4;
 
 import static com.github.jaws.proto.v13.HeaderConstants.*;
 import com.github.jaws.util.RandomData;
+import com.github.jaws.util.ResizableCircularByteBuffer;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
@@ -27,7 +28,10 @@ public class FrameTest {
 			data, 0, data.length, encodedFrame);
 		assertTrue("encode valid?", encodedFrame.valid);
 		
-		final ByteArrayInputStream in = new ByteArrayInputStream(encodedFrame.raw);
+		
+		final ResizableCircularByteBuffer in = new ResizableCircularByteBuffer(
+			encodedFrame.raw);
+
 		decodedFrame = DecodedFrame.decode(in, decodedFrame);
 		assertTrue("decode valid?", decodedFrame.valid);
 		assertEquals(decodedFrame.payloadLength, data.length);

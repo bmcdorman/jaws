@@ -1,6 +1,7 @@
 package com.github.jaws.proto.v13;
 
 import static com.github.jaws.proto.v13.HeaderConstants.*;
+import com.github.jaws.util.ResizableCircularByteBuffer;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -19,12 +20,57 @@ public class DecodedFrame {
 	// payload length.
 	public byte[] data = new byte[126];
 	
-	private static byte readByte(final InputStream in) throws DecodeException, IOException {
+	private static byte readByte(final ResizableCircularByteBuffer in) throws DecodeException {
 		final int val = in.read();
 		if(val < 0) {
 			throw new DecodeException("Insufficient data available to decode frame.");
 		}
 		return (byte)val;
+	}
+	
+	/**
+	 * Attempts to look ahead in the byte stream and detect if there are enough bytes for
+	 * a successful frame decode. This method may return false positives (that is, the decode
+	 * can still fail), but should never return true negatives (that is, if isSufficientData
+	 * fails, decode will always fail too).
+	 * 
+	 * @param in The incoming byte stream, in a circular buffer
+	 * @return true if a decode might be possible, false otherwise
+	 */
+	public static boolean isSufficientData(final ResizableCircularByteBuffer in) {
+		if(in.available() < 2) return false;
+		
+		final int header = in.peek(0) << 8 | in.peek(1);
+		// Refer to RFC 6455 pg. 29 for more info.
+		final int unextendedPayloadSize = header & PAYLOAD_MASK;
+		
+		int payloadLength = 0;
+		int payloadStart = 2;
+		if(unextendedPayloadSize < 126) {
+			// No extension required
+			payloadLength = unextendedPayloadSize;
+		} else if(unextendedPayloadSize == 126) {
+			// Read next 16 bits as actual size
+			if(in.available() < payloadStart + 2) return false;
+			
+			payloadLength = in.peek(2) << 8 | in.peek(3);
+			payloadStart += 2;
+		} else {
+			// unextendedPayloadSize == 127 (since PAYLOAD_MASK is 7 bits,
+			// this is the max). Read next 64 bits as actual size.
+			if(in.available() < payloadStart + 8) return false;
+			
+			long theoreticalPayloadLength =
+					in.peek(4) << 56L | in.peek(5) << 48L |
+					in.peek(6) << 40L | in.peek(7) << 32L |
+					in.peek(8) << 24L | in.peek(9) << 16L |
+					in.peek(10) << 8L  | in.peek(11) << 0L;
+			
+			payloadLength = (int)theoreticalPayloadLength;
+			payloadStart += 8;
+		}
+		
+		return in.available() >= payloadLength + payloadStart;
 	}
 	
 	/**
@@ -35,14 +81,16 @@ public class DecodedFrame {
 	 * frame.
 	 * @return The passed reuse object, unless reuse was null.
 	 */
-	public static DecodedFrame decode(final InputStream in, DecodedFrame reuse)
-			throws DecodeException, IOException {
+	public static DecodedFrame decode(final ResizableCircularByteBuffer in, DecodedFrame reuse)
+			throws DecodeException {
 		if(in == null) throw new NullPointerException("Input stream can't be null");
 		// Create a new frame if the user passes us null
 		if(reuse == null) reuse = new DecodedFrame();
 		
 		reuse.valid = false;
 		
+		// FIXME: If a decode exception is thrown in this method, the buffer is in
+		// an undefined state.
 		int header = (((readByte(in) & 0xFF) << 8) | (readByte(in) & 0xFF));
 		
 		if((header & (RSV1_BIT | RSV2_BIT | RSV3_BIT)) > 0) {

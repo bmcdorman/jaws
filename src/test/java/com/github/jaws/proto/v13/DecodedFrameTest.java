@@ -2,7 +2,7 @@ package com.github.jaws.proto.v13;
 
 
 import com.github.jaws.util.RandomData;
-import java.io.ByteArrayInputStream;
+import com.github.jaws.util.ResizableCircularByteBuffer;
 import java.io.IOException;
 import org.junit.Test;
 import org.junit.Ignore;
@@ -20,10 +20,10 @@ public class DecodedFrameTest {
 		DecodedFrame.decode(null, null);
 	}
 	
-	@Test(expected = IOException.class)
+	@Test(expected = DecodeException.class)
 	public void prematureEof() throws DecodeException, IOException {
 		final byte[] someData = RandomData.getByteArray(2);
-		ByteArrayInputStream in = new ByteArrayInputStream(someData);
+		final ResizableCircularByteBuffer in = new ResizableCircularByteBuffer(someData);
 		DecodedFrame.decode(in, null);
 	}
 }
