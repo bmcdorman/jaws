@@ -69,13 +69,34 @@ public class ResizableCircularByteBufferTest {
 		assertEquals(-1, b.read());
 	}
 	
+	@Test
+	public void peekAhead() {
+		final byte[] bytes = RandomData.getByteArray(500);
+		final ResizableCircularByteBuffer b = new ResizableCircularByteBuffer(bytes);
+		
+		assertEquals(bytes[0] & 0xFF, b.peek());
+		assertEquals(bytes[4] & 0xFF, b.peek(4));
+		assertEquals(bytes[402] & 0xFF, b.peek(402));
+	}
+	
+	@Test
+	public void peekAheadTooMany() {
+		final byte[] bytes = RandomData.getByteArray(500);
+		final ResizableCircularByteBuffer b = new ResizableCircularByteBuffer(bytes);
+		
+		// Peek one byte over data length
+		assertEquals("expected invalid value for invalid range", -1, b.peek(500));
+		
+		// Peek several bytes over data length
+		assertEquals("expected invalid value for invalid range", -1, b.peek(5123));
+	}
+	
 	/**
 	 * This test is meant to invoke the circular nature of the buffer
 	 */
 	@Test
 	public void massageImpl() {
 		final ResizableCircularByteBuffer b = new ResizableCircularByteBuffer(5);
-		
 		
 		final byte[] firstBytes = RandomData.getByteArray(500);
 		b.write(firstBytes);
@@ -106,5 +127,14 @@ public class ResizableCircularByteBufferTest {
 		
 		assertEquals("expected number of bytes left", firstBytes.length + secondBytes.length
 			- readSome.length - someMore.length, b.available());
+	}
+	
+	@Test
+	public void clear() {
+		final byte[] bytes = RandomData.getByteArray(500);
+		final ResizableCircularByteBuffer b = new ResizableCircularByteBuffer(bytes);
+		b.clear();
+		assertTrue("Cleared buffer", b.isEmpty());
+		assertEquals("Cleared buffer", 0, b.available());
 	}
 }

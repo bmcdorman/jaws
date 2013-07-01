@@ -1,8 +1,5 @@
 package com.github.jaws.util;
 
-import java.io.IOException;
-import java.util.Arrays;
-
 /**
  * A fast re-sizable circular buffer implementation. This implementation is not thread safe.
  * 
@@ -36,6 +33,10 @@ public final class ResizableCircularByteBuffer {
 	public ResizableCircularByteBuffer(final byte[] data) {
 		this(data.length);
 		write(data);
+	}
+	
+	public void clear() {
+		start = end = size = 0;
 	}
 	
 	/**
@@ -115,37 +116,45 @@ public final class ResizableCircularByteBuffer {
 	}
 	
 	/**
-	 * Reads a single byte from the circular queue.
+	 * Looks ahead a single byte from the circular buffer.
 	 * 
 	 * @return The next readable byte
 	 */
-	public int read() {
-		if(isEmpty()) return -1;
-		
-		final byte ret = buffer[start];
-		
-		++start;
-		start %= buffer.length;
-		--size;
-		
-		return ret & 0xFF;
-	}
-	
-	public int read(final byte[] data) {
-		return read(data, 0, data.length);
+	public int peek() {
+		return peek(0);
 	}
 	
 	/**
-	 * Reads several bytes from the circular queue. This method is faster
-	 * than reading bytes one-by-one using read()
+	 * Looks ahead an arbitrary number of bytes in the buffer.
+	 * 
+	 * @return The next readable byte
+	 */
+	public int peek(final int offset) {
+		if(offset >= size) return -1;
+		
+		return buffer[(start + offset) % buffer.length] & 0xFF;
+	}
+	
+	/**
+	 * 
+	 * @param data The array to peek data into
+	 * @return The number of bytes actually peeked into the array
+	 */
+	public int peek(final byte[] data) {
+		return peek(data, 0, data.length);
+	}
+	
+	/**
+	 * Looks ahead several bytes from the circular buffer. This method is faster
+	 * than peeking bytes one-by-one using peek()
 	 * 
 	 * @param data The array to populate with bytes from the circular buffer
 	 * @param offset Specify the offset at which to begin placing bytes into data.
-	 * @param length The maximum number of bytes to read into data.
+	 * @param length The maximum number of bytes to peek into data.
 	 * 
-	 * @return The actual number of bytes read into data at offset
+	 * @return The actual number of bytes peeked into data at offset
 	 */
-	public int read(final byte[] data, final int offset, final int length) {
+	public int peek(final byte[] data, final int offset, final int length) {
 		int actualLength = Math.min(length, size);
 		if(actualLength <= 0) return 0;
 		
@@ -166,6 +175,42 @@ public final class ResizableCircularByteBuffer {
 		} else {
 			System.arraycopy(buffer, start, data, offset, actualLength);
 		}
+		
+		return actualLength;
+	}
+	
+	/**
+	 * Reads a single byte from the circular buffer.
+	 * 
+	 * @return The next readable byte
+	 */
+	public int read() {
+		final int ret = peek();
+		if(ret < 0) return ret;
+		
+		++start;
+		start %= buffer.length;
+		--size;
+		
+		return ret;
+	}
+	
+	public int read(final byte[] data) {
+		return read(data, 0, data.length);
+	}
+	
+	/**
+	 * Reads several bytes from the circular buffer. This method is faster
+	 * than reading bytes one-by-one using read()
+	 * 
+	 * @param data The array to populate with bytes from the circular buffer
+	 * @param offset Specify the offset at which to begin placing bytes into data.
+	 * @param length The maximum number of bytes to read into data.
+	 * 
+	 * @return The actual number of bytes read into data at offset
+	 */
+	public int read(final byte[] data, final int offset, final int length) {
+		final int actualLength = peek(data, offset, length);
 		
 		start += actualLength;
 		start %= buffer.length;
