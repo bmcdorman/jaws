@@ -8,6 +8,7 @@ public class EncodedFrame {
 	public int payloadLength = 0;
 	public int payloadStart = 0;
 	public int totalLength = 0;
+	private	byte[] payloadExtra = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	
 	public static EncodedFrame encode(final int opcode, final boolean fin,
 			final boolean masked, final byte[] data, final int offset,
@@ -29,20 +30,20 @@ public class EncodedFrame {
 		else header &= ~MASK_BIT;
 		
 		int extraBytes = 0;
-		byte[] payloadExtra = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	
 		if(length < 126) {
 			header |= length & PAYLOAD_MASK;
 		} else if(length < Short.MAX_VALUE) {
 			header |= 126 & PAYLOAD_MASK;
-			payloadExtra[0] = (byte)((length & 0xFF00) >>> 8);
-			payloadExtra[1] = (byte)((length & 0x00FF) >>> 0);
+			reuse.payloadExtra[0] = (byte)((length & 0xFF00) >>> 8);
+			reuse.payloadExtra[1] = (byte)((length & 0x00FF) >>> 0);
 			extraBytes += 2;
 		} else {
 			header |= 127 & PAYLOAD_MASK;
-			payloadExtra[4] = (byte)((length & 0xFF000000) >>> 24);
-			payloadExtra[5] = (byte)((length & 0x00FF0000) >>> 16);
-			payloadExtra[6] = (byte)((length & 0x0000FF00) >>> 8);
-			payloadExtra[7] = (byte)((length & 0x000000FF) >>> 0);
+			reuse.payloadExtra[4] = (byte)((length & 0xFF000000) >>> 24);
+			reuse.payloadExtra[5] = (byte)((length & 0x00FF0000) >>> 16);
+			reuse.payloadExtra[6] = (byte)((length & 0x0000FF00) >>> 8);
+			reuse.payloadExtra[7] = (byte)((length & 0x000000FF) >>> 0);
 			extraBytes += 8;
 		}
 		
@@ -66,7 +67,7 @@ public class EncodedFrame {
 		raw[0] = (byte)((header & 0xFF00) >>> 8); 
 		raw[1] = (byte)((header & 0x00FF) >>> 0);
 		
-		System.arraycopy(payloadExtra, 0, raw, 2, extraBytes);
+		System.arraycopy(reuse.payloadExtra, 0, raw, 2, extraBytes);
 		
 		if(masked) {
 			System.arraycopy(mask, 0, raw, 2 + extraBytes, mask.length);
@@ -80,6 +81,7 @@ public class EncodedFrame {
 		reuse.payloadLength = length;
 		reuse.payloadStart = payloadStart;
 		reuse.totalLength = payloadStart + length;
+
 		reuse.valid = true;
 		
 		return reuse;

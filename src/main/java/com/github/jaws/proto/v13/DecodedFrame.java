@@ -2,6 +2,7 @@ package com.github.jaws.proto.v13;
 
 import static com.github.jaws.proto.v13.HeaderConstants.*;
 import com.github.jaws.util.ResizableCircularByteBuffer;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -15,6 +16,7 @@ public class DecodedFrame {
 	public boolean valid = false;
 	public int header = 0x0000;
 	public int payloadLength = 0;
+	private byte[] mask = { 0, 0, 0, 0 };
 	
 	// This is by default large enough to hold a non-extended
 	// payload length.
@@ -89,9 +91,11 @@ public class DecodedFrame {
 		
 		reuse.valid = false;
 		
-		// FIXME: If a decode exception is thrown in this method, the buffer is in
-		// an undefined state.
-		int header = (((readByte(in) & 0xFF) << 8) | (readByte(in) & 0xFF));
+		if(in.available() < 2) {
+			throw new DecodeException("Insufficient data to read a complete frame.");
+		}
+		
+		int header = ((in.peek(0) & 0xFF) << 8) | (in.peek(1) & 0xFF);
 		
 		if((header & (RSV1_BIT | RSV2_BIT | RSV3_BIT)) > 0) {
 			final String hex = String.format("%x", header);
@@ -106,46 +110,70 @@ public class DecodedFrame {
 		if(unextendedPayloadSize < 126) {
 			// No extension required
 			reuse.payloadLength = unextendedPayloadSize;
+
 		} else if(unextendedPayloadSize == 126) {
+			if(in.available() < 4) {
+				throw new DecodeException("Insufficient data to read a complete"
+					+ " frame.");
+			}
 			// Read next 16 bits as actual size
-			reuse.payloadLength = (readByte(in) & 0xFF) << 8 | (readByte(in) & 0xFF);
+			reuse.payloadLength = (in.peek(2) & 0xFF) << 8 | (in.peek(3) & 0xFF);
+	
 			payloadStart += 2;
 		} else {
+			if(in.available() < 10) {
+				throw new DecodeException("Insufficient data to read a complete"
+					+ " frame.");
+			}
 			// unextendedPayloadSize == 127 (since PAYLOAD_MASK is 7 bits,
 			// this is the max). Read next 64 bits as actual size.
 			long theoreticalPayloadLength =
-					(readByte(in) & 0xFF) << 56L | (readByte(in) & 0xFF) << 48L |
-					(readByte(in) & 0xFF) << 40L | (readByte(in) & 0xFF) << 32L |
-					(readByte(in) & 0xFF) << 24L | (readByte(in) & 0xFF) << 16L |
-					(readByte(in) & 0xFF) << 8L  | (readByte(in) & 0xFF) << 0L;
+					(in.peek(2) & 0xFF) << 56L | (in.peek(3) & 0xFF) << 48L |
+					(in.peek(4) & 0xFF) << 40L | (in.peek(5) & 0xFF) << 32L |
+					(in.peek(6) & 0xFF) << 24L | (in.peek(7) & 0xFF) << 16L |
+					(in.peek(8) & 0xFF) << 8L  | (in.peek(9) & 0xFF) << 0L;
 			
 			// We can't easily store this in a byte array
 			if(theoreticalPayloadLength > Integer.MAX_VALUE - payloadStart) {
 				throw new DecodeException("Frame is too large (greater" +
-					" than 31 bits. While this is tehcnically allowable" +
+					" than 31 bits.) While this is tehcnically allowable" +
 					" by WebSockets, it is currently unsupported.");
 			}
 			
 			reuse.payloadLength = (int)theoreticalPayloadLength;
+
 			payloadStart += 8;
+		}
+		
+		if(reuse.payloadLength <= 0) {
+			throw new DecodeException("Payload length must be positive (was "
+				+ reuse.payloadLength + ")");
 		}
 		
 		// Is the mask bit set?
 		// See pg. 33
-		byte[] mask = { 0, 0, 0, 0 };
 		if((header & MASK_BIT) > 0) {
-			for(int i = 0; i < mask.length; ++i) {
-				mask[i] = readByte(in);
+			for(int i = 0; i < reuse.mask.length; ++i) {
+				reuse.mask[i] = (byte)in.peek(i + payloadStart);
 			}
-			payloadStart += mask.length;
+			payloadStart += reuse.mask.length;
+		} else {
+			for(int i = 0; i < reuse.mask.length; ++i) reuse.mask[i] = 0;
 		}
+		
+		if(in.available() < payloadStart + reuse.payloadLength) {
+			throw new DecodeException("Insufficient data to read a complete"
+					+ " frame.");
+		}
+		
+		in.discard(payloadStart);
 		
 		// FIXME: This could get really large and next frame it would stay
 		// that size.
 		if(reuse.payloadLength > reuse.data.length) {
 			reuse.data = new byte[reuse.payloadLength];
 		}
-				
+		
 		byte[] data = reuse.data;
 		
 		if(in.read(data, 0, reuse.payloadLength) < 0) {
@@ -154,7 +182,7 @@ public class DecodedFrame {
 		
 		for(int j = 0; j < reuse.payloadLength; ++j) {
 			// mask is zeroed out in case MASK_BIT isn't set
-			data[j] = (byte)(data[j] ^ mask[j % 4]);
+			data[j] = (byte)(data[j] ^ reuse.mask[j % 4]);
 		}
 		
 		reuse.header = header;

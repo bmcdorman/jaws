@@ -10,7 +10,7 @@ package com.github.jaws.util;
  */
 public class RandomData {
 	public static byte[] getByteArray(int length) {
-		byte[] ret = new byte[length];
+		final byte[] ret = new byte[length];
 		for(int i = 0; i < length; ++i) {
 			ret[i] = (byte)(Math.random() * 256);
 		}

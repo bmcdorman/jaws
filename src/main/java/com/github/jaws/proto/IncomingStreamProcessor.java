@@ -11,7 +11,7 @@ public abstract class IncomingStreamProcessor {
 		return getNumMessagesAvailable() > 0;
 	}
 	
-	public abstract void admit(final byte[] data);
+	public abstract void admit(final byte[] data, final int offset, final int length);
 	
 	public abstract int getNumMessagesAvailable();
 	public abstract Message nextMessage();

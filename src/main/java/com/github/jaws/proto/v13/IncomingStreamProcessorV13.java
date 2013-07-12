@@ -28,19 +28,18 @@ public class IncomingStreamProcessorV13 extends IncomingStreamProcessor {
 		ReceivingMessage
 	}
 	
-	private State state;
+	private State state = State.Waiting;
 	
 	@Override
-	public void admit(final byte[] data) {
-		buffer.write(data);
+	public void admit(final byte[] data, final int offset, final int length) {
+		buffer.write(data, offset, length);
 		if(!DecodedFrame.isSufficientData(buffer)) return;
+		// if(true) throw new RuntimeException("Sufficient data");
 		
 		try {
 			frame = DecodedFrame.decode(buffer, frame);
 		} catch(DecodeException e) {
-			System.err.println("FIXME: This is really bad. Our buffer is in an"
-				+ " undefined state. Who knows where the next frame is now."
-				+ " With that said, happily continuing in an undefined state.");
+			throw new RuntimeException(e.getMessage());
 		}
 		
 		if(frame == null) {
@@ -66,6 +65,8 @@ public class IncomingStreamProcessorV13 extends IncomingStreamProcessor {
 	
 	private void freshFrame() {
 		final int op = frame.header;
+		
+		
 		if((op & CONTINUATION_FRAME_OPCODE) != 0) {
 			System.err.println("FIXME: We were NOT expecting a continuation frame."
 				+ " Bailing.");
@@ -85,14 +86,15 @@ public class IncomingStreamProcessorV13 extends IncomingStreamProcessor {
 			messageType = Message.Type.Pong;
 		}
 		
+		
 		if((frame.header & FIN_BIT) == 0) state = State.ReceivingMessage;
 		else publishMessage();
 	}
 	
 	private void continuationFrame() {
-		if((frame.header & CONTINUATION_FRAME_OPCODE) == 0) {
+		if((frame.header & OPCODE_MASK) != 0) {
 			System.err.println("FIXME: We were expecting a continuation frame."
-				+ " Bailing.");
+				+ " (instead got " + (frame.header & OPCODE_MASK) + ") Bailing.");
 			bail();
 			return;
 		}
@@ -113,6 +115,7 @@ public class IncomingStreamProcessorV13 extends IncomingStreamProcessor {
 		Message m = new Message();
 		
 		final byte[] data = new byte[messageDataBuffer.available()];
+		messageDataBuffer.read(data);
 		m.setData(data);
 		
 		m.setType(messageType);

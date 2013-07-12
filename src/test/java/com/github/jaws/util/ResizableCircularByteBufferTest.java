@@ -1,6 +1,9 @@
 package com.github.jaws.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Random;
+import java.util.List;
 import static org.junit.Assert.*;
 
 import org.junit.Test;
@@ -127,6 +130,42 @@ public class ResizableCircularByteBufferTest {
 		
 		assertEquals("expected number of bytes left", firstBytes.length + secondBytes.length
 			- readSome.length - someMore.length, b.available());
+	}
+	
+	private void addBytes(final List<Byte> list, final byte[] bytes) {
+		for(byte b : bytes) list.add(b);
+	}
+	
+	private void checkQueue(final List<Byte> list, final byte[] bytes) {
+		for(int i = 0; i < bytes.length; ++i) {
+			assertEquals((byte)bytes[i], (byte)list.remove(0));
+		}
+	}
+	
+	@Test
+	public void randomMessage() {
+		final Random random = new Random(100);
+		final ResizableCircularByteBuffer b = new ResizableCircularByteBuffer(100);
+		List<Byte> written = new ArrayList<Byte>();
+		for(int i = 0; i < 1000; ++i) {
+			final byte[] bytes = RandomData.getByteArray(random.nextInt(1000) + 1);
+			addBytes(written, bytes);
+			b.write(bytes);
+			
+			if(Math.random() > 0.5) {
+				final int readLen = Math.min(random.nextInt(2000) + 1,
+					b.available());
+				byte[] read = new byte[readLen];
+				assertEquals(read.length, b.read(read));
+				checkQueue(written, read);
+			}
+		}
+		
+		byte[] read = new byte[b.available()];
+		assertEquals(read.length, b.read(read));
+		checkQueue(written, read);
+		
+		
 	}
 	
 	@Test
