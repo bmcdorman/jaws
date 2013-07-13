@@ -145,11 +145,6 @@ public class DecodedFrame {
 			payloadStart += 8;
 		}
 		
-		if(reuse.payloadLength <= 0) {
-			throw new DecodeException("Payload length must be positive (was "
-				+ reuse.payloadLength + ")");
-		}
-		
 		// Is the mask bit set?
 		// See pg. 33
 		if((header & MASK_BIT) > 0) {
@@ -176,7 +171,7 @@ public class DecodedFrame {
 		
 		byte[] data = reuse.data;
 		
-		if(in.read(data, 0, reuse.payloadLength) < 0) {
+		if(reuse.payloadLength > 0 && in.read(data, 0, reuse.payloadLength) < 0) {
 			throw new DecodeException("Insufficient data available to decode frame.");
 		}
 		

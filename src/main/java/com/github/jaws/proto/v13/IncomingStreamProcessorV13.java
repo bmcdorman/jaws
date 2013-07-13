@@ -76,7 +76,9 @@ public class IncomingStreamProcessorV13 extends IncomingStreamProcessor {
 		
 		// This frame has the opcode in it, so store it
 		// for later.
-		if((op & TEXT_FRAME_OPCODE) != 0) {
+		if((op & OPCODE_MASK) == CONNECTION_CLOSE_FRAME_OPCODE) {
+			messageType = Message.Type.CloseConnection;
+		} else if((op & TEXT_FRAME_OPCODE) != 0) {
 			messageType = Message.Type.Text;
 		} else if((op & BINARY_FRAME_OPCODE) != 0) {
 			messageType = Message.Type.Binary;
@@ -114,9 +116,12 @@ public class IncomingStreamProcessorV13 extends IncomingStreamProcessor {
 	private void publishMessage() {
 		Message m = new Message();
 		
-		final byte[] data = new byte[messageDataBuffer.available()];
-		messageDataBuffer.read(data);
-		m.setData(data);
+		if(!messageDataBuffer.isEmpty()) {
+			final byte[] data = new byte[messageDataBuffer.available()];
+		
+			messageDataBuffer.read(data);
+			m.setData(data);
+		}
 		
 		m.setType(messageType);
 		

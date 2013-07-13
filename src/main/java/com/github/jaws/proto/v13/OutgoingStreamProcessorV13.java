@@ -25,15 +25,13 @@ public class OutgoingStreamProcessorV13 extends OutgoingStreamProcessor {
 
 	
 	@Override
-	public boolean admit(final Message message) {
+	public void admit(final Message message) {
 		try {
 			frame = EncodedFrame.encode(MessageHelpers.getOpcode(message.getType()),
 				true, masked, message.getData(), 0, message.getDataLength(), frame);
+			out.write(frame.raw, 0, frame.totalLength);
 		} catch(EncodeException e) {
 			System.err.println("FIXME: Need to raise an additional exception.");
-			return false;
 		}
-		
-		return true;
 	}
 }

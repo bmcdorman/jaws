@@ -27,6 +27,23 @@ public class IncomingStreamProcessorV13Test {
 	}
 	
 	@Test
+	public void admitCloseConnectionFrame() throws EncodeException {
+		EncodedFrame frame = null;
+		frame = EncodedFrame.encode(HeaderConstants.CONNECTION_CLOSE_FRAME_OPCODE,
+			true, true, null, 0, 0, frame);
+		IncomingStreamProcessorV13 sp = new IncomingStreamProcessorV13();
+		sp.admit(frame.raw, 0, frame.totalLength);
+		assertEquals("more or less than one frame available", 1,
+			sp.getNumMessagesAvailable());
+		assertTrue("Message available was false", sp.isMessageAvailable());
+		Message m = sp.nextMessage();
+		assertNotNull("Message was null", m);
+		assertEquals("Data length was incorrect", 0, m.getDataLength());
+		assertEquals("Message type was incorrect", Message.Type.CloseConnection,
+			m.getType());
+	}
+	
+	@Test
 	public void admitMaskedSingleFrame() throws EncodeException {
 		final byte[] data = RandomData.getByteArray(512);
 		EncodedFrame frame = null;
@@ -100,5 +117,7 @@ public class IncomingStreamProcessorV13Test {
 		
 		System.arraycopy(m.getData(), 0, actualData, 0, m.getDataLength());
 		assertArrayEquals("data unequal", expectedData, actualData);
+		
+		assertEquals("type unequal", Message.Type.Binary, m.getType());
 	}
 }
