@@ -20,3 +20,9 @@ License
 
 Jaws is released under the MIT License. For more information, see the LICENSE file at the root of this project.
 
+Acknowledgements
+================
+
+This project is a part of a Google Summer of Code 2013 proposal to bring networking support to the open source Doppio JVM.
+Thank you to Google for funding and PLASMA@UMass for guidance on this project.
+
