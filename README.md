@@ -36,6 +36,6 @@ Jaws is released under the MIT License. For more information, see the LICENSE fi
 Acknowledgements
 ----------------
 
-This project is a part of a Google Summer of Code 2013 proposal to bring networking support to the open source Doppio JVM.
-Thank you to Google for funding and PLASMA@UMass for guidance on this project.
+This project is a part of a [Google Summer of Code 2013](http://www.google-melange.com/gsoc/homepage/google/gsoc2013) proposal to bring networking support to the open source Doppio JVM.
+Thank you to Google for funding and [PLASMA@UMass](http://plasma.cs.umass.edu/) for guidance on this project.
 
