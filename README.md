@@ -16,6 +16,7 @@ Building and Installing
 jaws is built using maven. Use your system's package manager to install maven if you don't have it already.
 
 Once you have maven installed and the jaws repository cloned, run:
+
     cd jaws
     mvn clean install
     
