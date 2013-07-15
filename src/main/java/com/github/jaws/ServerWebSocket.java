@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.List;
 
 /**
  *
@@ -53,7 +54,7 @@ public class ServerWebSocket extends WebSocket {
 				serverHandshake.setKey(clientHandshake.getKey());
 				final HttpHeader response = serverHandshake.getHeader();
 				final byte[] toSend = response.generateString().getBytes();
-				System.out.println(response);
+				// System.out.println(response);
 				
 				// Write it out
 				out.write(toSend);
@@ -61,14 +62,16 @@ public class ServerWebSocket extends WebSocket {
 				// Send our state machine to the WebSocket state
 				mode = WebSocket.Mode.WebSocket;
 				
-				System.out.println("Upgraded connection.");
+				// System.out.println("Upgraded connection.");
 				
-				final int version = clientHandshake.getVersion();
-				inp = factory.createIncomingStreamProcessor(version,
+				final List<Integer> versions = clientHandshake.getVersions();
+				
+				inp = factory.createIncomingStreamProcessor(versions,
 					ProtocolFactory.Role.Server);
-			
-				outp = factory.createOutgoingStreamProcessor(version,
+				outp = factory.createOutgoingStreamProcessor(versions,
 					ProtocolFactory.Role.Server);
+				// TODO: If inp or outp are null, we need to send back a fail
+				// response instead of succcess
 			} catch(HandshakeException e) {
 				throw new WebSocketException(e.getMessage());
 			}
