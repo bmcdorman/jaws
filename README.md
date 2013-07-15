@@ -28,6 +28,12 @@ Usage
 
 Coming soon!
 
+Speed and Benchmarks
+--------------------
+
+Preliminary testing shows that unoptimized jaws is just as fast as node.js websockets. This section will have pretty
+graphs and more information soon.
+
 License
 -------
 
