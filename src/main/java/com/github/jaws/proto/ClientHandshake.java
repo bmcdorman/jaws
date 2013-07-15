@@ -9,6 +9,7 @@ import static com.github.jaws.http.HttpHeader.*;
 
 // Get Http Request keys
 import static com.github.jaws.http.HttpRequestHeader.*;
+import static com.github.jaws.proto.Handshake.SEC_WEBSOCKET_VERSION_KEY;
 import org.apache.commons.codec.binary.Base64;
 
 /**
@@ -17,7 +18,6 @@ import org.apache.commons.codec.binary.Base64;
  */
 public class ClientHandshake extends Handshake {
 	private final List<String> protocols = new ArrayList<String>();
-	private int version;
 	private String resourceName = "/";
 	
 	public static final String UPGRADE_VALUE = "websocket";
@@ -47,16 +47,6 @@ public class ClientHandshake extends Handshake {
 	
 	public List<String> getProtocols() {
 		return protocols;
-	}
-	
-	public void setVersion(final int version) {
-		if(version < 0) throw new IllegalArgumentException("Negative version numbers not"
-			+ " allowed");
-		this.version = version;
-	}
-	
-	public int getVersion() {
-		return version;
 	}
 	
 	public void setResourceName(final String resourceName) {
@@ -112,7 +102,7 @@ public class ClientHandshake extends Handshake {
 			if(keyBase64s == null) throw new HandshakeException("No websocket key");
 			if(keyBase64s.size() != 1) throw new HandshakeException("One and only one"
 				+ " websocket key must be specified.");
-			String keyBase64 = keyBase64s.get(0);
+			final String keyBase64 = keyBase64s.get(0);
 			final byte[] key = Base64.decodeBase64(keyBase64);
 			if(key.length != KEY_LENGTH) {
 				throw new HandshakeException("Key is not " + KEY_LENGTH + " bytes");
@@ -123,20 +113,20 @@ public class ClientHandshake extends Handshake {
 		{
 			List<String> versions = header.getField(SEC_WEBSOCKET_VERSION_KEY);
 			if(versions == null) throw new HandshakeException("No version key");
-			if(versions.size() != 1) throw new HandshakeException("One and only one"
-				+ " version must be specified.");
 			
 			final String version = versions.get(0);
-			ret.setVersion(Integer.parseInt(version));
+			for(final String v : versions) {
+				ret.addVersion(Integer.parseInt(v));
+			}
 		}
 		
 		{
-			List<String> exts = header.getField(SEC_WEBSOCKET_EXTENSIONS_KEY);
+			final List<String> exts = header.getField(SEC_WEBSOCKET_EXTENSIONS_KEY);
 			if(exts != null) ret.setExtensions(exts);
 		}
 		
 		{
-			List<String> protos = header.getField(SEC_WEBSOCKET_PROTOCOL_KEY);
+			final List<String> protos = header.getField(SEC_WEBSOCKET_PROTOCOL_KEY);
 			if(protos != null) ret.setProtocols(protos);
 		}
 		
@@ -156,7 +146,12 @@ public class ClientHandshake extends Handshake {
 		
 		header.addField(UPGRADE_KEY, UPGRADE_VALUE);
 		header.addField(CONNECTION_KEY, CONNECTION_VALUE);
-		header.addField(SEC_WEBSOCKET_VERSION_KEY, Integer.toString(version));
+		
+		{
+			for(Integer i : getVersions()) {
+				header.addField(SEC_WEBSOCKET_VERSION_KEY, Integer.toString(i));
+			}
+		}
 		
 		{
 			String exts = "";

@@ -23,6 +23,7 @@ public class Handshake {
 	
 	private final List<String> extensions = new ArrayList<String>();
 	private byte[] key;
+	private List<Integer> versions = new ArrayList<Integer>();
 	
 	public void setExtensions(final List<String> extensions) {
 		if(extensions == null) throw new NullPointerException("Extensions must be a"
@@ -67,5 +68,26 @@ public class Handshake {
 	
 	public byte[] getKey() {
 		return key;
+	}
+	
+	public void clearVersions() {
+		versions.clear();
+	}
+	
+	public void addVersion(final int version) {
+		if(version < 0) throw new IllegalArgumentException("Negative version numbers not"
+			+ " allowed");
+		
+		versions.add(version);
+	}
+	
+	public void setVersions(final List<Integer> versions) {
+		clearVersions();
+		
+		for(Integer i : versions) addVersion(i);
+	}
+	
+	public List<Integer> getVersions() {
+		return versions;
 	}
 }
