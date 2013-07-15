@@ -78,11 +78,38 @@ public class HttpResponseHeader extends HttpHeader {
 		addField(DATE_KEY, format.format(now));
 	}
 	
+	public enum StatusCodeType {
+		Informational,
+		Success,
+		Redirection,
+		ClientError,
+		ServerError,
+		Unknown;
+		
+		public static StatusCodeType getStatusCodeType(final int statusCode) {
+			switch(statusCode / 100) {
+			case 1: return Informational;
+			case 2: return Success;
+			case 3: return Redirection;
+			case 4: return ClientError;
+			case 5: return ServerError;
+			default: return Unknown;
+			}
+		}
+	};
+	
 	/**
 	 * @return the statusCode
 	 */
 	public int getStatusCode() {
 		return statusCode;
+	}
+	
+	/**
+	 * 
+	 */
+	public StatusCodeType getStatusCodeType() {
+		return StatusCodeType.getStatusCodeType(statusCode);
 	}
 
 	/**
