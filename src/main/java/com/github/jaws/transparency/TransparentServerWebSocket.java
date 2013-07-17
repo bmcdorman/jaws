@@ -30,8 +30,12 @@ public class TransparentServerWebSocket extends ServerSocket {
 	
 	@Override
 	public Socket accept() throws IOException {
-		final Socket s = super.accept();
-		if(s == null) return null;
-		return null;
+		final AbstractTransparentWebSocket s = new TransparentWebSocketServer();
+		
+		// See java.net.Socket documentation for info on
+		// what's going on here
+		implAccept(s);
+		
+		return s;
 	}
 }
