@@ -155,4 +155,14 @@ public abstract class AbstractTransparentWebSocket extends Socket {
 		lazyInit();
 		return outputStream;
 	}
+	
+	@Override
+	public void close() throws IOException {
+		try {
+			backend.close();
+		} catch(final WebSocketException e) {
+			throw new IOException(e.getCause());
+		}
+		super.close();
+	}
 }
