@@ -34,11 +34,11 @@ public class ServerHandshake extends Handshake {
 	
 	private Type type = Type.Success;
 	
-	void setType(final Type type) {
+	public void setType(final Type type) {
 		this.type = type;
 	}
 	
-	Type getType() {
+	public Type getType() {
 		return type;
 	}
 	
