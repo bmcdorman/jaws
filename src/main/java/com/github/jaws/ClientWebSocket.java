@@ -20,6 +20,10 @@ import java.net.Socket;
 public class ClientWebSocket extends WebSocket {
 	private byte[] buffer = new byte[4096];
 	
+	// Prevent sending the request HTTP header multiple times
+	// before we get a response. This probably should be changed.
+	private boolean waitingOnResponse = false;
+	
 	public ClientWebSocket(final InputStream in, final OutputStream out,
 			final ProtocolFactory factory) {
 		super(in, out, factory);
@@ -38,11 +42,13 @@ public class ClientWebSocket extends WebSocket {
 	}
 	
 	private void requestUpgradeConnection() throws WebSocketException, IOException {
+		if(waitingOnResponse) return;
 		ClientHandshake c = new ClientHandshake();
 		c.setVersions(factory.getSupportedVersions());
 		final HttpHeader req = c.getHeader();
 		final byte[] toSend = req.generateString().getBytes();
 		out.write(toSend);
+		waitingOnResponse = true;
 	}
 	
 	@Override
@@ -57,8 +63,17 @@ public class ClientWebSocket extends WebSocket {
 				ServerHandshake serverHandshake = ServerHandshake
 					.parseServerHandshake(res);
 				
+				// Server said our connection failed
+				if(serverHandshake.getType() != ServerHandshake.Type.Success) {
+					throw new WebSocketException("Server rejected the"
+						+ " connection (" + res.getReasonPhrase() + ")");
+				}
 				
-			} catch(HandshakeException e) {
+				// WooHoo! Connected.
+				mode = WebSocket.Mode.WebSocket;
+				waitingOnResponse = false;
+				
+			} catch(final HandshakeException e) {
 				throw new WebSocketException(e.getMessage());
 			}
 		} else if(mode == WebSocket.Mode.WebSocket) {
