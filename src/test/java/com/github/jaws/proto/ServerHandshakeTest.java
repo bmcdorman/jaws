@@ -1,10 +1,8 @@
 package com.github.jaws.proto;
 
-import com.github.jaws.util.RandomData;
 import java.util.List;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.Test;
-import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 

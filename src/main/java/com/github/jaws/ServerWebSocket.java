@@ -18,8 +18,6 @@ import java.util.List;
  * @author Braden McDorman
  */
 public class ServerWebSocket extends WebSocket {
-	private byte[] buffer = new byte[4096];
-	
 	public ServerWebSocket(final InputStream in, final OutputStream out,
 			final ProtocolFactory factory) {
 		super(in, out, factory);

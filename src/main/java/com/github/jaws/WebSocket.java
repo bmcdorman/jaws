@@ -1,15 +1,10 @@
 package com.github.jaws;
 
-import com.github.jaws.http.HttpHeader;
-import com.github.jaws.http.HttpRequestHeader;
-import com.github.jaws.proto.ClientHandshake;
 import com.github.jaws.proto.DefaultProtocolFactory;
-import com.github.jaws.proto.HandshakeException;
 import com.github.jaws.proto.IncomingStreamProcessor;
 import com.github.jaws.proto.Message;
 import com.github.jaws.proto.OutgoingStreamProcessor;
 import com.github.jaws.proto.ProtocolFactory;
-import com.github.jaws.proto.ServerHandshake;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -109,7 +104,12 @@ public abstract class WebSocket {
 			throw new WebSocketException("Can't recv messages until handshake is"
 				+ " established");
 		}
-		return inp.nextMessage();
+		System.out.println("recv");
+		Message m = inp.nextMessage();
+		if(m != null) {
+			System.out.println("Got message: " + m.getType());
+		}
+		return m;
 	}
 	
 	/**

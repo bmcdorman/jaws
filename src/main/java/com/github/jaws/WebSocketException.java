@@ -5,6 +5,8 @@ package com.github.jaws;
  * @author Braden McDorman
  */
 public class WebSocketException extends Exception {
+	private static final long serialVersionUID = 7153137153651029119L;
+
 	public WebSocketException() {
 		super();
 	}

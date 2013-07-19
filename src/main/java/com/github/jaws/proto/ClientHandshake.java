@@ -9,7 +9,6 @@ import static com.github.jaws.http.HttpHeader.*;
 
 // Get Http Request keys
 import static com.github.jaws.http.HttpRequestHeader.*;
-import static com.github.jaws.proto.Handshake.SEC_WEBSOCKET_VERSION_KEY;
 import org.apache.commons.codec.binary.Base64;
 
 /**
@@ -114,7 +113,6 @@ public class ClientHandshake extends Handshake {
 			List<String> versions = header.getField(SEC_WEBSOCKET_VERSION_KEY);
 			if(versions == null) throw new HandshakeException("No version key");
 			
-			final String version = versions.get(0);
 			for(final String v : versions) {
 				ret.addVersion(Integer.parseInt(v));
 			}

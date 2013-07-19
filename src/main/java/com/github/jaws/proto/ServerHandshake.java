@@ -4,8 +4,6 @@
  */
 package com.github.jaws.proto;
 
-import com.github.jaws.http.HttpRequestHeader;
-import java.util.ArrayList;
 import java.util.List;
 
 // Methods

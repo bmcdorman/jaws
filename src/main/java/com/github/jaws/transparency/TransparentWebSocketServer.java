@@ -3,8 +3,6 @@ package com.github.jaws.transparency;
 import com.github.jaws.ServerWebSocket;
 import com.github.jaws.WebSocket;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Proxy;
 import java.net.UnknownHostException;
@@ -17,9 +15,8 @@ import java.net.UnknownHostException;
  * @author Braden McDorman
  */
 public class TransparentWebSocketServer extends AbstractTransparentWebSocket {	
-	protected WebSocket createBacking(final InputStream in, final OutputStream out)
-			throws IOException {
-		return new ServerWebSocket(in, out);
+	protected WebSocket createBacking() throws IOException {
+		return new ServerWebSocket(getSocketInputStream(), getSocketOutputStream());
 	}
 	
 	public TransparentWebSocketServer() {

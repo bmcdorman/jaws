@@ -2,9 +2,6 @@ package com.github.jaws.proto.v13;
 
 import static com.github.jaws.proto.v13.HeaderConstants.*;
 import com.github.jaws.util.ResizableCircularByteBuffer;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * Encapsulates one frame of a larger WebSocket message. One frame object
@@ -21,14 +18,6 @@ public class DecodedFrame {
 	// This is by default large enough to hold a non-extended
 	// payload length.
 	public byte[] data = new byte[126];
-	
-	private static byte readByte(final ResizableCircularByteBuffer in) throws DecodeException {
-		final int val = in.read();
-		if(val < 0) {
-			throw new DecodeException("Insufficient data available to decode frame.");
-		}
-		return (byte)val;
-	}
 	
 	/**
 	 * Attempts to look ahead in the byte stream and detect if there are enough bytes for

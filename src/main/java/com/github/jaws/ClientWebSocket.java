@@ -1,7 +1,6 @@
 package com.github.jaws;
 
 import com.github.jaws.http.HttpHeader;
-import com.github.jaws.http.HttpRequestHeader;
 import com.github.jaws.http.HttpResponseHeader;
 import com.github.jaws.proto.ClientHandshake;
 import com.github.jaws.proto.DefaultProtocolFactory;
@@ -18,8 +17,6 @@ import java.net.Socket;
  * @author Braden McDorman
  */
 public class ClientWebSocket extends WebSocket {
-	private byte[] buffer = new byte[4096];
-	
 	// Prevent sending the request HTTP header multiple times
 	// before we get a response. This probably should be changed.
 	private boolean waitingOnResponse = false;
@@ -43,7 +40,7 @@ public class ClientWebSocket extends WebSocket {
 	
 	private void requestUpgradeConnection() throws WebSocketException, IOException {
 		if(waitingOnResponse) return;
-		ClientHandshake c = new ClientHandshake();
+		final ClientHandshake c = new ClientHandshake();
 		c.setVersions(factory.getSupportedVersions());
 		final HttpHeader req = c.getHeader();
 		final byte[] toSend = req.generateString().getBytes();

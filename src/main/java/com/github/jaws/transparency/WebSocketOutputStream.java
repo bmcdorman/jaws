@@ -1,5 +1,7 @@
-package com.github.jaws;
+package com.github.jaws.transparency;
 
+import com.github.jaws.WebSocket;
+import com.github.jaws.WebSocketException;
 import com.github.jaws.util.ResizableCircularByteBuffer;
 
 import java.io.IOException;
@@ -17,7 +19,7 @@ public class WebSocketOutputStream extends OutputStream {
 	private WebSocket webSocket;
 	private ResizableCircularByteBuffer outgoing;
 	
-	WebSocketOutputStream(final WebSocket webSocket) {
+	public WebSocketOutputStream(final WebSocket webSocket) {
 		this.webSocket = webSocket;
 	}
 	

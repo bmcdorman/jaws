@@ -2,13 +2,9 @@ package com.github.jaws.proto.v13;
 
 import static org.junit.Assert.*;
 
-import com.github.jaws.http.HttpHeader;
 import com.github.jaws.proto.Message;
 import com.github.jaws.util.RandomData;
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.Test;
-import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 

@@ -1,5 +1,7 @@
-package com.github.jaws;
+package com.github.jaws.transparency;
 
+import com.github.jaws.WebSocket;
+import com.github.jaws.WebSocketException;
 import com.github.jaws.proto.Message;
 import com.github.jaws.util.ResizableCircularByteBuffer;
 
@@ -16,9 +18,9 @@ import java.io.InputStream;
 public class WebSocketInputStream extends InputStream {
 	private boolean autoPolling;
 	private WebSocket webSocket;
-	private ResizableCircularByteBuffer incoming;
+	private ResizableCircularByteBuffer incoming = new ResizableCircularByteBuffer(1024);
 	
-	WebSocketInputStream(final WebSocket webSocket) {
+	public WebSocketInputStream(final WebSocket webSocket) {
 		this.webSocket = webSocket;
 	}
 	
@@ -44,6 +46,19 @@ public class WebSocketInputStream extends InputStream {
 	}
 	
 	@Override
+	public int available() {
+		try {
+			autoPoll();
+			// Try and get as much data as possible
+			ensureData(Integer.MAX_VALUE);
+		} catch(Exception e) {
+			// Silent error
+		}
+		
+		return incoming.available();
+	}
+	
+	@Override
 	public int read() throws IOException {
 		try {
 			autoPoll();
@@ -53,6 +68,18 @@ public class WebSocketInputStream extends InputStream {
 		}
 		
 		return incoming.read();
+	}
+	
+	@Override
+	public int read(byte[] buffer) throws IOException {
+		try {
+			autoPoll();
+			ensureData(buffer.length);
+		} catch(WebSocketException e) {
+			throw new IOException(e.getCause());
+		}
+		
+		return incoming.read(buffer);
 	}
 	
 	@Override

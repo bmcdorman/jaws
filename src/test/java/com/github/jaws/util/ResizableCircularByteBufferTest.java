@@ -1,13 +1,11 @@
 package com.github.jaws.util;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 import java.util.List;
 import static org.junit.Assert.*;
 
 import org.junit.Test;
-import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
@@ -32,12 +30,12 @@ public class ResizableCircularByteBufferTest {
 	
 	@Test(expected = IllegalArgumentException.class)
 	public void invalidStartingSize1() {
-		final ResizableCircularByteBuffer b = new ResizableCircularByteBuffer(0);
+		new ResizableCircularByteBuffer(0);
 	}
 	
 	@Test(expected = IllegalArgumentException.class)
 	public void invalidStartingSize2() {
-		final ResizableCircularByteBuffer b = new ResizableCircularByteBuffer(-123);
+		new ResizableCircularByteBuffer(-123);
 	}
 	
 	@Test

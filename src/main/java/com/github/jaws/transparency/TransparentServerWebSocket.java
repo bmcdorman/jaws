@@ -10,8 +10,6 @@ import java.net.Socket;
  * @author Braden McDorman
  */
 public class TransparentServerWebSocket extends ServerSocket {
-	private com.github.jaws.ServerWebSocket decorator;
-	
 	public TransparentServerWebSocket() throws IOException {
 		super();
 	}

@@ -1,6 +1,5 @@
 package com.github.jaws.transparency;
 
-import com.github.jaws.ClientWebSocket;
 import com.github.jaws.WebSocket;
 import com.github.jaws.WebSocketException;
 import java.io.IOException;
@@ -12,87 +11,42 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 /**
- *
+ * This class serves as the abstract base for the server's transparent
+ * WebSocket and the client's transparent WebSocket. Almost all of the
+ * logic (except the associated backend) is shared between these two
+ * subclasses.
+ * 
  * @author Braden McDorman
  */
 public abstract class AbstractTransparentWebSocket extends Socket {
 	private WebSocket backend = null;
-	private PollingOutputStream outputStream = null;
-	private PollingInputStream inputStream = null;
+	private WebSocketOutputStream outputStream = null;
+	private WebSocketInputStream inputStream = null;
 	
-	private void ioPoll() throws IOException {
-		try {
-			backend.poll();
-		} catch(final WebSocketException e) {
-			throw new IOException(e.getCause());
-		}
-	}
-	
-	private class PollingInputStream extends InputStream {
-		private InputStream backing;
-		
-		public PollingInputStream(final InputStream backing) {
-			this.backing = backing;
-		}
-		
-		@Override
-		public int read() throws IOException {
-			ioPoll();
-			return backing.read();
-		}
-		
-		@Override
-		public int read(byte[] b) throws IOException {
-			ioPoll();
-			return backing.read(b);
-		}
-		
-		@Override
-		public int read(byte[] b, int offset, int length) throws IOException {
-			ioPoll();
-			return backing.read(b, offset, length);
-		}
-	}
-	
-	private class PollingOutputStream extends OutputStream {
-		private OutputStream backing;
-	
-		public PollingOutputStream(final OutputStream backing) {
-			this.backing = backing;
-		}
-		
-		@Override
-		public void write(int b) throws IOException {
-			backing.write(b);
-			ioPoll();
-		}
-		
-		@Override
-		public void write(byte[] b) throws IOException {
-			backing.write(b);
-			ioPoll();
-		}
-		
-		@Override
-		public void write(byte[] b, int offset, int length) throws IOException {
-			backing.write(b, offset, length);
-			ioPoll();
-		}
-	}
-	
+	/**
+	 * Lazily initialize the polling io streams and backend. We have to
+	 * do this lazily because the socket's io streams aren't valid until
+	 * it has successfully connected.
+	 * 
+	 * @throws IOException If there was an error retrieving the socket's
+	 * io streams or if there was an error creating the WebSocket backend.
+	 */
 	private void lazyInit() throws IOException {
 		if(backend != null) return;
 		
 		try {
-			outputStream = new PollingOutputStream(getOutputStream());
-			inputStream = new PollingInputStream(getInputStream());
-			backend = createBacking(inputStream, outputStream);
+			backend = createBacking();
+			outputStream = new WebSocketOutputStream(backend);
+			inputStream = new WebSocketInputStream(backend);
 		} catch(final IOException e) {
 			outputStream = null;
 			inputStream = null;
 			backend = null;
 			throw e;
 		}
+		
+		outputStream.setAutoPolling(true);
+		inputStream.setAutoPolling(true);
 	}
 	
 	/**
@@ -101,17 +55,10 @@ public abstract class AbstractTransparentWebSocket extends Socket {
 	 * the server WebSocket messages and client WebSocket
 	 * messages differ, this pattern or another one is essential.
 	 * 
-	 * @param in The InputStream to associate with the backing
-	 * @param out The OutputStream to associate with the backing
 	 * @return The WebSocket backing that this socket should use
 	 */
-	protected abstract WebSocket createBacking(final InputStream in, final OutputStream out)
-		throws IOException;
+	protected abstract WebSocket createBacking() throws IOException;
 	
-	/**
-	 * Construct a new Transparent WebSocket with the default client WebSocket
-	 * backend.
-	 */
 	public AbstractTransparentWebSocket() {
 	}
 
@@ -138,6 +85,14 @@ public abstract class AbstractTransparentWebSocket extends Socket {
 		super(ia, i, ia1, i1);
 	}
 	
+	protected InputStream getSocketInputStream() throws IOException {
+		return super.getInputStream();
+	}
+	
+	protected OutputStream getSocketOutputStream() throws IOException {
+		return super.getOutputStream();
+	}
+	
 	@Override
 	public InputStream getInputStream() throws IOException {
 		// This will fail if the stream isn't ready yet
@@ -156,6 +111,10 @@ public abstract class AbstractTransparentWebSocket extends Socket {
 		return outputStream;
 	}
 	
+	/**
+	 * Send the WebSocket closing handshake and close the associated socket.
+	 * @throws IOException 
+	 */
 	@Override
 	public void close() throws IOException {
 		try {
