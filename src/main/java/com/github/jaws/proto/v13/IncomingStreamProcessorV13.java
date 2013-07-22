@@ -66,7 +66,6 @@ public class IncomingStreamProcessorV13 extends IncomingStreamProcessor {
 	private void freshFrame() {
 		final int op = frame.header;
 		
-		
 		if((op & CONTINUATION_FRAME_OPCODE) != 0) {
 			System.err.println("FIXME: We were NOT expecting a continuation frame."
 				+ " Bailing.");

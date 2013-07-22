@@ -34,6 +34,7 @@ public class WebSocketInputStream extends InputStream {
 
 	private void autoPoll() throws WebSocketException, IOException {
 		if(!autoPolling) return;
+		
 		webSocket.poll();
 	}
 	
@@ -51,7 +52,9 @@ public class WebSocketInputStream extends InputStream {
 			autoPoll();
 			// Try and get as much data as possible
 			ensureData(Integer.MAX_VALUE);
-		} catch(Exception e) {
+		} catch(final IOException e) {
+			// Silent error
+		} catch(final WebSocketException e) {
 			// Silent error
 		}
 		

@@ -40,10 +40,6 @@ public class ServerHandshake extends Handshake {
 		return type;
 	}
 	
-	public void setVersions(final List<Integer> versions) {
-		
-	}
-	
 	public void setProtocol(final String protocol) {
 		this.protocol = protocol;
 	}
@@ -85,17 +81,17 @@ public class ServerHandshake extends Handshake {
 		// Failure type handshakes will have a protocol key attached
 		if(ret.type == Type.Success) {
 			final List<String> protos = res.getField(SEC_WEBSOCKET_PROTOCOL_KEY);
-			if(protos.size() > 1) {
+			if(protos != null && protos.size() > 1) {
 				throw new HandshakeException("Expecting no more than one protocol"
 					+ " specification.");
 			}
 		
-			if(protos.size() == 1) ret.setProtocol(protos.get(0));
+			if(protos != null && protos.size() == 1) ret.setProtocol(protos.get(0));
 		}
 		
 		// Failure type handshakes will have version number(s) attached
 		if(ret.type == Type.Failure) {
-			List<String> versions = res.getField(SEC_WEBSOCKET_VERSION_KEY);
+			final List<String> versions = res.getField(SEC_WEBSOCKET_VERSION_KEY);
 			if(versions == null) throw new HandshakeException("No version key");
 			
 			for(final String v : versions) {
@@ -107,25 +103,28 @@ public class ServerHandshake extends Handshake {
 	}
 	
 	public HttpResponseHeader getHeader() {
-		if(getKey() == null) throw new NullPointerException("Key must be set before calling"
-			+ " getHeader");
+		if(getKey() == null && getType() == Type.Success) {
+			throw new NullPointerException("Key must be set before calling"
+					+ " getHeader");
+		}
 		
 		HttpResponseHeader header = new HttpResponseHeader();
 		header.setVersion(HTTP_VERSION);
-		header.setStatusCode(101);
-		header.setReasonPhrase("Switiching Protocols");
+		header.setStatusCode(getType() == Type.Success ? 101 : 400);
+		header.setReasonPhrase(getType() == Type.Success ? "Switching Protocols" : "Bad Request");
 		header.addDateField();
 		header.addServerField();
 		
-		final byte[] accept = (new String(Base64.encodeBase64(getKey()))
-			+ ACCEPT_MAGIC).getBytes();
-		final byte[] sha = DigestUtils.sha1(accept);
+		if(getType() == Type.Success) {
+			final byte[] accept = (new String(Base64.encodeBase64(getKey()))
+				+ ACCEPT_MAGIC).getBytes();
+			final byte[] sha = DigestUtils.sha1(accept);
 		
-		header.addField(UPGRADE_KEY, UPGRADE_VALUE);
-		header.addField(CONNECTION_KEY, CONNECTION_VALUE);
-		header.addField(SEC_WEBSOCKET_ACCEPT_KEY, new String(Base64.encodeBase64(sha)));
 		
-		{
+			header.addField(UPGRADE_KEY, UPGRADE_VALUE);
+			header.addField(CONNECTION_KEY, CONNECTION_VALUE);
+			header.addField(SEC_WEBSOCKET_ACCEPT_KEY, new String(Base64.encodeBase64(sha)));
+			
 			String exts = "";
 			boolean firstExt = true;
 			for(String ext : getExtensions()) {
@@ -135,15 +134,17 @@ public class ServerHandshake extends Handshake {
 				exts += ext;
 			}
 			if(!exts.isEmpty()) header.addField(SEC_WEBSOCKET_EXTENSIONS_KEY, exts);
+			
+			if(protocol != null) header.addField(SEC_WEBSOCKET_PROTOCOL_KEY, protocol);
 		}
 
-		{
+		if(getType() == Type.Failure) {
 			for(Integer i : getVersions()) {
 				header.addField(SEC_WEBSOCKET_VERSION_KEY, Integer.toString(i));
 			}
 		}
 		
-		if(protocol != null) header.addField(SEC_WEBSOCKET_PROTOCOL_KEY, protocol);
+		
 		
 		return header;
 	}

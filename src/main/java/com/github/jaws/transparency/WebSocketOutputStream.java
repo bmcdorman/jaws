@@ -2,6 +2,8 @@ package com.github.jaws.transparency;
 
 import com.github.jaws.WebSocket;
 import com.github.jaws.WebSocketException;
+import com.github.jaws.proto.Message;
+import com.github.jaws.proto.Message.Type;
 import com.github.jaws.util.ResizableCircularByteBuffer;
 
 import java.io.IOException;
@@ -15,9 +17,9 @@ import java.io.OutputStream;
  * @author Braden McDorman
  */
 public class WebSocketOutputStream extends OutputStream {
-	private boolean autoPolling;
+	private boolean autoPolling = false;
 	private WebSocket webSocket;
-	private ResizableCircularByteBuffer outgoing;
+	private ResizableCircularByteBuffer outgoing = new ResizableCircularByteBuffer(1024);
 	
 	public WebSocketOutputStream(final WebSocket webSocket) {
 		this.webSocket = webSocket;
@@ -33,6 +35,17 @@ public class WebSocketOutputStream extends OutputStream {
 
 	private void autoPoll() throws WebSocketException, IOException {
 		if(!autoPolling) return;
+		
+		if(!outgoing.isEmpty()) {
+			// TODO: This is a lot of heap allocation...
+			Message out = new Message();
+			out.setType(Type.Binary);
+			byte[] buffer = new byte[outgoing.available()];
+			outgoing.read(buffer);
+			out.setData(buffer);
+			webSocket.send(out);
+		}
+		
 		webSocket.poll();
 	}
 	
@@ -43,7 +56,7 @@ public class WebSocketOutputStream extends OutputStream {
 		try {
 			autoPoll();
 		} catch(WebSocketException e) {
-			throw new IOException(e.getCause());
+			throw new IOException(e);
 		}
 	}
 	
@@ -54,7 +67,7 @@ public class WebSocketOutputStream extends OutputStream {
 		try {
 			autoPoll();
 		} catch(WebSocketException e) {
-			throw new IOException(e.getCause());
+			throw new IOException(e);
 		}
 	}
 	

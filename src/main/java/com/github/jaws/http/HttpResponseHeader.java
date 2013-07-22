@@ -140,15 +140,23 @@ public class HttpResponseHeader extends HttpHeader {
 	
 	public static HttpResponseHeader parseResponseHeader(final InputStream in)
 			throws IOException {
-		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+		final BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 		final String firstLine = reader.readLine();
 		if(firstLine.isEmpty()) return null;
 		final String[] firstLineParts = firstLine.split(SEPARATOR);
-		if(firstLineParts.length != 3) return null;
+		if(firstLineParts.length < 3) return null;
 		HttpResponseHeader ret = new HttpResponseHeader();
 		ret.setVersion(firstLineParts[0]);
 		ret.setStatusCode(Integer.parseInt(firstLineParts[1]));
-		ret.setReasonPhrase(firstLineParts[2]);
+		
+		// Append the rest to the reason
+		final StringBuilder builder = new StringBuilder();
+		for(int i = 2; i < firstLineParts.length; ++i) {
+			builder.append(firstLineParts[i]);
+			builder.append(' ');
+		}
+		ret.setReasonPhrase(builder.toString().trim());
+		
 		ret.parseFields(reader);
 		return ret;
 	}

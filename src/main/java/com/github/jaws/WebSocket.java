@@ -5,10 +5,13 @@ import com.github.jaws.proto.IncomingStreamProcessor;
 import com.github.jaws.proto.Message;
 import com.github.jaws.proto.OutgoingStreamProcessor;
 import com.github.jaws.proto.ProtocolFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * WebSocket is a decorator for an input stream and output stream that handles handshakes and
@@ -30,6 +33,8 @@ public abstract class WebSocket {
 	protected ProtocolFactory factory;
 	protected IncomingStreamProcessor inp;
 	protected OutgoingStreamProcessor outp;
+	
+	private final List<Message> sendQueue = new LinkedList<Message>();
 	
 	public WebSocket(final InputStream in, final OutputStream out,
 			final ProtocolFactory factory) {
@@ -78,18 +83,33 @@ public abstract class WebSocket {
 	}
 	
 	/**
-	 * Queue a message to be sent to the connected peer.
+	 * Queue a message to be sent to the connected peer. These message
+	 * objects may be queued until poll() is called and the
+	 * WebSocket handshake is completed.
 	 * 
 	 * @see poll()
 	 * @param message The message to send to the connected peer.
-	 * @throws WebSocketException If the HTTP connection has not yet been upgraded to WebSocket
 	 */
-	public void send(final Message message) throws WebSocketException {
-		if(mode != Mode.WebSocket) {
-			throw new WebSocketException("Can't send messages until handshake is"
-				+ " established");
+	public void send(final Message message) {
+		sendQueue.add(message);
+	}
+	
+	/**
+	 * "Why don't we just put everything in outp immediately, Braden??"
+	 * 
+	 * Well, inquisitive programmer, the answer lies in the fact
+	 * that outp is null until the web socket handshake is established.
+	 * 
+	 * We want users to be able to queue up messages to send before
+	 * that, though, so this is one way to do it.
+	 */
+	private void depopulateQueue() {
+		if(outp == null) return;
+		
+		while(!sendQueue.isEmpty()) {
+			final Message message = sendQueue.remove(0);
+			outp.admit(message);
 		}
-		outp.admit(message);
 	}
 	
 	/**
@@ -104,7 +124,7 @@ public abstract class WebSocket {
 			throw new WebSocketException("Can't recv messages until handshake is"
 				+ " established");
 		}
-		System.out.println("recv");
+		
 		Message m = inp.nextMessage();
 		if(m != null) {
 			System.out.println("Got message: " + m.getType());
@@ -148,6 +168,7 @@ public abstract class WebSocket {
 	 * I/O streams.
 	 */
 	public void poll() throws WebSocketException, IOException {
+		depopulateQueue();
 		processOutgoingData();
 		processIncomingData();
 	}

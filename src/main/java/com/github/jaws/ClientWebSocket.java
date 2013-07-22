@@ -6,7 +6,10 @@ import com.github.jaws.proto.ClientHandshake;
 import com.github.jaws.proto.DefaultProtocolFactory;
 import com.github.jaws.proto.HandshakeException;
 import com.github.jaws.proto.ProtocolFactory;
+import com.github.jaws.proto.ProtocolFactory.Role;
 import com.github.jaws.proto.ServerHandshake;
+import com.github.jaws.util.RandomData;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -41,6 +44,7 @@ public class ClientWebSocket extends WebSocket {
 	private void requestUpgradeConnection() throws WebSocketException, IOException {
 		if(waitingOnResponse) return;
 		final ClientHandshake c = new ClientHandshake();
+		c.setKey(RandomData.getByteArray(ClientHandshake.KEY_LENGTH));
 		c.setVersions(factory.getSupportedVersions());
 		final HttpHeader req = c.getHeader();
 		final byte[] toSend = req.generateString().getBytes();
@@ -55,9 +59,10 @@ public class ClientWebSocket extends WebSocket {
 		if(mode == WebSocket.Mode.Http) {
 			final HttpResponseHeader res = HttpResponseHeader.parseResponseHeader(in);
 			if(res == null) return;
+			
 			try {
 				// Get the server's handshake
-				ServerHandshake serverHandshake = ServerHandshake
+				final ServerHandshake serverHandshake = ServerHandshake
 					.parseServerHandshake(res);
 				
 				// Server said our connection failed
@@ -66,12 +71,31 @@ public class ClientWebSocket extends WebSocket {
 						+ " connection (" + res.getReasonPhrase() + ")");
 				}
 				
+				inp = factory.createIncomingStreamProcessor(factory.getSupportedVersions(),
+						Role.Client);
+				
+				if(inp == null) {
+					throw new WebSocketException("Failed to create input stream processor");
+				}
+				
+				outp = factory.createOutgoingStreamProcessor(factory.getSupportedVersions(),
+						Role.Client);
+				
+				if(outp == null) {
+					throw new WebSocketException("Failed to create output stream processor");
+				}
+				
 				// WooHoo! Connected.
 				mode = WebSocket.Mode.WebSocket;
 				waitingOnResponse = false;
 				
+				System.out.println("Upgraded connection");
+				
+				processOutgoingData();
+				
 			} catch(final HandshakeException e) {
-				throw new WebSocketException(e.getMessage());
+				System.out.println(e.getMessage());
+				throw new WebSocketException(e);
 			}
 		} else if(mode == WebSocket.Mode.WebSocket) {
 			inp.read(in);

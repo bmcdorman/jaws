@@ -118,7 +118,10 @@ public abstract class AbstractTransparentWebSocket extends Socket {
 	@Override
 	public void close() throws IOException {
 		try {
-			backend.close();
+			// We need this if because
+			// the Socket constructor
+			// calls close for some reason.
+			if(backend != null) backend.close();
 		} catch(final WebSocketException e) {
 			throw new IOException(e.getCause());
 		}

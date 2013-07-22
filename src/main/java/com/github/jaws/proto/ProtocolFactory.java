@@ -37,11 +37,11 @@ public abstract class ProtocolFactory {
 	public abstract OutgoingStreamProcessor createOutgoingStreamProcessor(final int version,
 		final Role role);
 	
-	private int getLatestSupported(final List<Integer> versions) {
+	public int getLatestSupported(final List<Integer> versions) {
 		int latest = -1;
 		final List<Integer> supported = getSupportedVersions();
-		for(Integer v : versions) {
-			if(!supported.contains(latest)) continue;
+		for(final Integer v : versions) {
+			if(!supported.contains(v)) continue;
 			if(latest < v) latest = v;
 		}
 		return latest;
